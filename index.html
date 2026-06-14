@@ -59,11 +59,12 @@
 
         input[type="text"] {
             flex: 1;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: 1px solid #ccd6e0;
             border-radius: 6px;
             font-size: 1rem;
             outline: none;
+            min-width: 0; /* Flexbox 내에서 input 찌그러짐 방지 */
         }
 
         input[type="text"]:focus {
@@ -71,12 +72,17 @@
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        
+        button:active {
+            transform: scale(0.98);
         }
 
         .btn-primary { background-color: var(--primary-color); color: white; }
@@ -85,13 +91,13 @@
         .btn-danger:hover { background-color: #c0392b; }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover { background-color: #27ae60; }
-        .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+        .btn-sm { padding: 6px 12px; font-size: 0.9rem; }
 
-        /* 메인 레이아웃 */
+        /* 메인 레이아웃 (기본: PC/윈도우 환경) */
         .main-layout {
             display: grid;
-            grid-template-columns: 250px 1fr;
-            gap: 25px;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
         }
 
         /* 카테고리 사이드바 */
@@ -101,7 +107,7 @@
         }
 
         .sidebar h2, .content h2 {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             margin-bottom: 15px;
             color: #4a5568;
         }
@@ -114,7 +120,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 8px;
             border-radius: 6px;
             cursor: pointer;
@@ -133,6 +139,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            padding-right: 5px;
         }
 
         .category-actions {
@@ -144,22 +151,27 @@
         .content {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .word-table-container {
             overflow-x: auto;
             margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
+            table-layout: fixed; /* 테이블 오버플로우 방지 */
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 14px 15px;
             border-bottom: 1px solid #e2e8f0;
+            word-break: break-all; /* 긴 단어 줄바꿈 처리 */
         }
 
         th {
@@ -174,7 +186,7 @@
 
         .word-actions {
             display: flex;
-            gap: 5px;
+            gap: 6px;
         }
 
         .empty-message {
@@ -182,6 +194,63 @@
             padding: 40px;
             color: #a0aec0;
             font-style: italic;
+        }
+
+        /* ===================================================
+           📱 반응형 미디어 쿼리 (모바일 및 태블릿 환경)
+        ====================================================== */
+        
+        /* 1. 태블릿 환경 (국민 해상도 768px ~ 1024px 이하) */
+        @media (max-width: 1024px) {
+            .container { padding: 20px; }
+            .main-layout { grid-template-columns: 240px 1fr; gap: 20px; }
+        }
+
+        /* 2. 모바일 환경 (768px 미만 화면) */
+        @media (max-width: 767px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            header h1 { font-size: 2rem; margin-bottom: 15px; }
+            
+            /* 좌우 배치를 위아래 1단 배치로 전환 */
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 2px solid #edf2f7;
+                padding-right: 0;
+                padding-bottom: 20px;
+            }
+
+            /* 모바일에서 단어 입력창 세로 배치 전환 */
+            #wordFormContainer .input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            #wordFormContainer .input-group button {
+                width: 100%;
+                padding: 12px;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.95rem;
+            }
+            
+            .word-actions {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .word-actions button {
+                width: 100%;
+                padding: 6px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -199,8 +268,7 @@
                 <input type="text" id="categoryInput" placeholder="새 언어 (예: 영어)">
                 <button class="btn-primary btn-sm" onclick="addCategory()">추가</button>
             </div>
-            <ul id="categoryList" class="category-list">
-                </ul>
+            <ul id="categoryList" class="category-list"></ul>
         </aside>
 
         <main class="content">
@@ -222,8 +290,7 @@
                                 <th style="width: 20%;">관리</th>
                             </tr>
                         </thead>
-                        <tbody id="wordTableBody">
-                            </tbody>
+                        <tbody id="wordTableBody"></tbody>
                     </table>
                     <div id="emptyWordMessage" class="empty-message" style="display: none;">
                         등록된 단어가 없습니다. 첫 단어를 추가해보세요!
@@ -232,24 +299,23 @@
             </div>
 
             <div id="noCategorySelectedMessage" class="empty-message">
-                ← 왼쪽에서 언어 카테고리를 선택하거나 새로 추가해주세요.
+                ← 카테고리를 선택하거나 새로 추가해주세요.
             </div>
         </main>
     </div>
 </div>
 
 <script>
-    // 데이터 구조 샘플 및 초기화
-    // data = { "영어": [{word: "Apple", meaning: "사과"}], "일본어": [] }
+    // 데이터 로드 및 초기화
     let dictionaryData = JSON.parse(localStorage.getItem('dictionaryData')) || {};
     let currentCategory = null;
 
-    // 페이지 로드 시 실행
+    // 페이지 시작점
     document.addEventListener('DOMContentLoaded', () => {
         renderCategories();
+        renderWords();
     });
 
-    // 로컬스토리지 저장
     function saveToLocalStorage() {
         localStorage.setItem('dictionaryData', JSON.stringify(dictionaryData));
     }
@@ -272,21 +338,19 @@
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'category-actions';
 
-            // 수정 버튼
             const editBtn = document.createElement('button');
             editBtn.className = 'btn-primary btn-sm';
             editBtn.innerText = '✏️';
             editBtn.onclick = (e) => {
-                e.stopPropagation(); // 부모 li 클릭 이벤트 방지
+                e.stopPropagation(); 
                 editCategory(category);
             };
 
-            // 삭제 버튼
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-danger btn-sm';
             deleteBtn.innerText = '🗑️';
             deleteBtn.onclick = (e) => {
-                e.stopPropagation(); // 부모 li 클릭 이벤트 방지
+                e.stopPropagation(); 
                 deleteCategory(category);
             };
 
@@ -315,14 +379,12 @@
         saveToLocalStorage();
         input.value = '';
         
-        // 새로 만든 카테고리 바로 선택
         selectCategory(categoryName);
-        renderCategories();
     }
 
     function editCategory(oldName) {
         const newName = prompt(`'${oldName}' 카테고리의 새 이름을 입력하세요:`, oldName);
-        if (newName === null) return; // 취소 버튼
+        if (newName === null) return; 
         
         const trimmedName = newName.trim();
         if (!trimmedName) {
@@ -335,7 +397,6 @@
         }
 
         if (trimmedName !== oldName) {
-            // 키 이름 변경 데이터 이주
             dictionaryData[trimmedName] = dictionaryData[oldName];
             delete dictionaryData[oldName];
             
@@ -344,9 +405,7 @@
             }
             saveToLocalStorage();
             renderCategories();
-            if (currentCategory === trimmedName) {
-                renderWords();
-            }
+            renderWords();
         }
     }
 
@@ -389,7 +448,6 @@
             return;
         }
 
-        // 선택된 언어가 있을 때 화면 전환
         currentCategoryTitle.innerText = `🗂️ ${currentCategory} 단어장`;
         wordFormContainer.style.display = 'block';
         noCategoryMessage.style.display = 'none';
@@ -413,13 +471,11 @@
                 const tdActions = document.createElement('td');
                 tdActions.className = 'word-actions';
 
-                // 단어 수정 버튼
                 const editBtn = document.createElement('button');
                 editBtn.className = 'btn-primary btn-sm';
                 editBtn.innerText = '수정';
                 editBtn.onclick = () => editWord(index);
 
-                // 단어 삭제 버튼
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'btn-danger btn-sm';
                 deleteBtn.innerText = '삭제';
@@ -447,6 +503,10 @@
         if (!word || !meaning) {
             alert('단어와 뜻을 모두 입력해주세요.');
             return;
+        }
+
+        if (!dictionaryData[currentCategory]) {
+            dictionaryData[currentCategory] = [];
         }
 
         dictionaryData[currentCategory].push({ word, meaning });
@@ -492,4 +552,3 @@
 </script>
 </body>
 </html>
-
