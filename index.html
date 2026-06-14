@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>낱말장</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --bg-color: #f5f7fa;
+            --card-color: #ffffff;
+            --text-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-color);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+        }
+
+        /* 공통 입력 양식 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ccd6e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #357abd; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: #27ae60; }
+        .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+
+        /* 메인 레이아웃 */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 25px;
+        }
+
+        /* 카테고리 사이드바 */
+        .sidebar {
+            border-right: 2px solid #edf2f7;
+            padding-right: 20px;
+        }
+
+        .sidebar h2, .content h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #4a5568;
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .category-item:hover, .category-item.active {
+            background-color: #edf2f7;
+            border-color: var(--primary-color);
+        }
+
+        .category-name {
+            flex: 1;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        /* 단어 콘텐츠 영역 */
+        .content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .word-table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #fcfdfd;
+        }
+
+        .word-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>낱말장</h1>
+    </header>
+
+    <div class="main-layout">
+        <aside class="sidebar">
+            <h2>언어 카테고리</h2>
+            <div class="input-group" style="margin-bottom: 15px;">
+                <input type="text" id="categoryInput" placeholder="새 언어 (예: 영어)">
+                <button class="btn-primary btn-sm" onclick="addCategory()">추가</button>
+            </div>
+            <ul id="categoryList" class="category-list">
+                </ul>
+        </aside>
+
+        <main class="content">
+            <h2 id="currentCategoryTitle">언어를 선택해주세요</h2>
+            
+            <div id="wordFormContainer" style="display: none;">
+                <div class="input-group">
+                    <input type="text" id="wordInput" placeholder="단어 (예: Apple)">
+                    <input type="text" id="meaningInput" placeholder="뜻 (예: 사과)">
+                    <button class="btn-success" onclick="addWord()">단어 추가</button>
+                </div>
+
+                <div class="word-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">단어</th>
+                                <th style="width: 40%;">뜻</th>
+                                <th style="width: 20%;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wordTableBody">
+                            </tbody>
+                    </table>
+                    <div id="emptyWordMessage" class="empty-message" style="display: none;">
+                        등록된 단어가 없습니다. 첫 단어를 추가해보세요!
+                    </div>
+                </div>
+            </div>
+
+            <div id="noCategorySelectedMessage" class="empty-message">
+                ← 왼쪽에서 언어 카테고리를 선택하거나 새로 추가해주세요.
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // 데이터 구조 샘플 및 초기화
+    // data = { "영어": [{word: "Apple", meaning: "사과"}], "일본어": [] }
+    let dictionaryData = JSON.parse(localStorage.getItem('dictionaryData')) || {};
+    let currentCategory = null;
+
+    // 페이지 로드 시 실행
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCategories();
+    });
+
+    // 로컬스토리지 저장
+    function saveToLocalStorage() {
+        localStorage.setItem('dictionaryData', JSON.stringify(dictionaryData));
+    }
+
+    /* ================= 카테고리 관련 기능 ================= */
+    
+    function renderCategories() {
+        const categoryList = document.getElementById('categoryList');
+        categoryList.innerHTML = '';
+
+        Object.keys(dictionaryData).forEach(category => {
+            const li = document.createElement('li');
+            li.className = `category-item ${currentCategory === category ? 'active' : ''}`;
+            li.onclick = () => selectCategory(category);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'category-name';
+            nameSpan.innerText = category;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'category-actions';
+
+            // 수정 버튼
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-primary btn-sm';
+            editBtn.innerText = '✏️';
+            editBtn.onclick = (e) => {
+                e.stopPropagation(); // 부모 li 클릭 이벤트 방지
+                editCategory(category);
+            };
+
+            // 삭제 버튼
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-danger btn-sm';
+            deleteBtn.innerText = '🗑️';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation(); // 부모 li 클릭 이벤트 방지
+                deleteCategory(category);
+            };
+
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(deleteBtn);
+            li.appendChild(nameSpan);
+            li.appendChild(actionsDiv);
+            categoryList.appendChild(li);
+        });
+    }
+
+    function addCategory() {
+        const input = document.getElementById('categoryInput');
+        const categoryName = input.value.trim();
+
+        if (!categoryName) {
+            alert('언어 이름을 입력해주세요.');
+            return;
+        }
+        if (dictionaryData[categoryName]) {
+            alert('이미 존재하는 언어 카테고리입니다.');
+            return;
+        }
+
+        dictionaryData[categoryName] = [];
+        saveToLocalStorage();
+        input.value = '';
+        
+        // 새로 만든 카테고리 바로 선택
+        selectCategory(categoryName);
+        renderCategories();
+    }
+
+    function editCategory(oldName) {
+        const newName = prompt(`'${oldName}' 카테고리의 새 이름을 입력하세요:`, oldName);
+        if (newName === null) return; // 취소 버튼
+        
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
+            alert('이름은 공백일 수 없습니다.');
+            return;
+        }
+        if (trimmedName !== oldName && dictionaryData[trimmedName]) {
+            alert('이미 존재하는 카테고리 이름입니다.');
+            return;
+        }
+
+        if (trimmedName !== oldName) {
+            // 키 이름 변경 데이터 이주
+            dictionaryData[trimmedName] = dictionaryData[oldName];
+            delete dictionaryData[oldName];
+            
+            if (currentCategory === oldName) {
+                currentCategory = trimmedName;
+            }
+            saveToLocalStorage();
+            renderCategories();
+            if (currentCategory === trimmedName) {
+                renderWords();
+            }
+        }
+    }
+
+    function deleteCategory(categoryName) {
+        if (confirm(`'${categoryName}' 카테고리와 내부의 모든 단어가 삭제됩니다. 정말 삭제하시겠습니까?`)) {
+            delete dictionaryData[categoryName];
+            saveToLocalStorage();
+            
+            if (currentCategory === categoryName) {
+                currentCategory = null;
+            }
+            
+            renderCategories();
+            renderWords();
+        }
+    }
+
+    function selectCategory(categoryName) {
+        currentCategory = categoryName;
+        renderCategories();
+        renderWords();
+    }
+
+
+    /* ================= 단어 관련 기능 ================= */
+
+    function renderWords() {
+        const wordFormContainer = document.getElementById('wordFormContainer');
+        const noCategoryMessage = document.getElementById('noCategorySelectedMessage');
+        const currentCategoryTitle = document.getElementById('currentCategoryTitle');
+        const tbody = document.getElementById('wordTableBody');
+        const emptyWordMessage = document.getElementById('emptyWordMessage');
+
+        tbody.innerHTML = '';
+
+        if (!currentCategory) {
+            currentCategoryTitle.innerText = '언어를 선택해주세요';
+            wordFormContainer.style.display = 'none';
+            noCategoryMessage.style.display = 'block';
+            return;
+        }
+
+        // 선택된 언어가 있을 때 화면 전환
+        currentCategoryTitle.innerText = `🗂️ ${currentCategory} 단어장`;
+        wordFormContainer.style.display = 'block';
+        noCategoryMessage.style.display = 'none';
+
+        const words = dictionaryData[currentCategory] || [];
+
+        if (words.length === 0) {
+            emptyWordMessage.style.display = 'block';
+        } else {
+            emptyWordMessage.style.display = 'none';
+            
+            words.forEach((item, index) => {
+                const tr = document.createElement('tr');
+
+                const tdWord = document.createElement('td');
+                tdWord.innerText = item.word;
+
+                const tdMeaning = document.createElement('td');
+                tdMeaning.innerText = item.meaning;
+
+                const tdActions = document.createElement('td');
+                tdActions.className = 'word-actions';
+
+                // 단어 수정 버튼
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-primary btn-sm';
+                editBtn.innerText = '수정';
+                editBtn.onclick = () => editWord(index);
+
+                // 단어 삭제 버튼
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-danger btn-sm';
+                deleteBtn.innerText = '삭제';
+                deleteBtn.onclick = () => deleteWord(index);
+
+                tdActions.appendChild(editBtn);
+                tdActions.appendChild(deleteBtn);
+                
+                tr.appendChild(tdWord);
+                tr.appendChild(tdMeaning);
+                tr.appendChild(tdActions);
+                
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    function addWord() {
+        const wordInput = document.getElementById('wordInput');
+        const meaningInput = document.getElementById('meaningInput');
+        
+        const word = wordInput.value.trim();
+        const meaning = meaningInput.value.trim();
+
+        if (!word || !meaning) {
+            alert('단어와 뜻을 모두 입력해주세요.');
+            return;
+        }
+
+        dictionaryData[currentCategory].push({ word, meaning });
+        saveToLocalStorage();
+        
+        wordInput.value = '';
+        meaningInput.value = '';
+        wordInput.focus();
+        
+        renderWords();
+    }
+
+    function editWord(index) {
+        const currentWord = dictionaryData[currentCategory][index];
+        
+        const newWord = prompt('새로운 단어를 입력하세요:', currentWord.word);
+        if (newWord === null) return; 
+
+        const newMeaning = prompt('새로운 뜻을 입력하세요:', currentWord.meaning);
+        if (newMeaning === null) return;
+
+        if (!newWord.trim() || !newMeaning.trim()) {
+            alert('단어와 뜻은 빈칸으로 둘 수 없습니다.');
+            return;
+        }
+
+        dictionaryData[currentCategory][index] = {
+            word: newWord.trim(),
+            meaning: newMeaning.trim()
+        };
+
+        saveToLocalStorage();
+        renderWords();
+    }
+
+    function deleteWord(index) {
+        if (confirm('이 단어를 삭제하시겠습니까?')) {
+            dictionaryData[currentCategory].splice(index, 1);
+            saveToLocalStorage();
+            renderWords();
+        }
+    }
+</script>
+</body>
+</html>
+
